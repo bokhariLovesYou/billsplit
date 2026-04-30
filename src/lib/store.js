@@ -1,38 +1,38 @@
-const STORAGE_KEY = "billsplit_months"
+const API_URL = import.meta.env.VITE_API_URL || ""
 
-export function getAllMonths() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
+if (!API_URL) {
+  console.warn("[billsplit] VITE_API_URL is not set — data will not persist.")
+}
+
+async function apiFetch(path = "", options = {}) {
+  const res = await fetch(`${API_URL}${path}`, options)
+  if (!res.ok) {
+    const text = await res.text().catch(() => "")
+    throw new Error(`API error ${res.status}: ${text}`)
   }
+  return res.json()
 }
 
-export function getMonth(monthKey) {
-  const all = getAllMonths()
-  return all.find(m => m.monthKey === monthKey) || null
+export async function getAllMonths() {
+  return apiFetch()
 }
 
-export function saveMonth(data) {
-  const all = getAllMonths()
-  const idx = all.findIndex(m => m.monthKey === data.monthKey)
-  if (idx >= 0) {
-    all[idx] = data
-  } else {
-    all.push(data)
-  }
-  // sort descending by monthKey
-  all.sort((a, b) => b.monthKey.localeCompare(a.monthKey))
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+export async function saveMonth(data) {
+  return apiFetch("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
 }
 
-export function deleteMonth(monthKey) {
-  const all = getAllMonths().filter(m => m.monthKey !== monthKey)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+export async function deleteMonth(monthKey) {
+  return apiFetch(`?monthKey=${encodeURIComponent(monthKey)}`, {
+    method: "DELETE",
+  })
 }
 
-// monthKey format: "2026-04"
+// ── Pure helpers (no I/O) ────────────────────────────────────────────────────
+
 export function formatMonthKey(year, month) {
   return `${year}-${String(month).padStart(2, "0")}`
 }

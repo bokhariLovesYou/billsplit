@@ -5,20 +5,30 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { calculateSplit, fmt } from "@/lib/parser"
 import { monthLabel } from "@/lib/store"
-import { TrendingUp, TrendingDown, Minus, DollarSign, Home, Zap, Package } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, DollarSign, Zap } from "lucide-react"
+
+// Monochrome gray palette
+const COLORS = {
+  total:     "#111827", // gray-900
+  paras:     "#6b7280", // gray-500
+  mishal:    "#9ca3af", // gray-400
+  housing:   "#1f2937", // gray-800
+  utilities: "#6b7280", // gray-500
+  misc:      "#d1d5db", // gray-300
+}
 
 function StatCard({ title, value, subtitle, icon: Icon, trend }) {
   return (
     <Card>
       <CardContent className="pt-5 px-5 pb-4">
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex justify-between items-start gap-3">
+          <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">{title}</p>
-            <p className="text-2xl font-bold font-mono">{value}</p>
-            {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+            <p className="text-xl font-bold font-mono">{value}</p>
+            {subtitle && <p className="text-xs text-muted-foreground mt-1 truncate">{subtitle}</p>}
           </div>
-          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
-            <Icon className="h-4.5 w-4.5 text-muted-foreground" />
+          <div className="h-8 w-8 shrink-0 rounded-lg bg-muted flex items-center justify-center">
+            <Icon className="h-4 w-4 text-muted-foreground" />
           </div>
         </div>
         {trend !== undefined && (
@@ -66,7 +76,7 @@ export default function Dashboard({ months }) {
     )
   }
 
-  // Build chart data (oldest first)
+  // Oldest first for chart rendering
   const chartData = [...months].reverse().map(m => {
     const calc = calculateSplit(m)
     return {
@@ -86,20 +96,19 @@ export default function Dashboard({ months }) {
   const avgTotal = chartData.reduce((s, d) => s + d.total, 0) / chartData.length
   const avgUtilities = chartData.reduce((s, d) => s + d.utilities, 0) / chartData.length
   const maxMonth = chartData.reduce((max, d) => d.total > max.total ? d : max, chartData[0])
-  const minMonth = chartData.reduce((min, d) => d.total < min.total ? d : min, chartData[0])
 
   return (
     <div className="space-y-6">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stat cards — 2-col on mobile, 4-col on md+ */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          title="This Month Total"
+          title="This Month"
           value={fmt(latest.grandTotal)}
           icon={DollarSign}
           trend={prev ? latest.grandTotal - prev.grandTotal : undefined}
         />
         <StatCard
-          title="Avg Monthly Total"
+          title="Avg Monthly"
           value={fmt(avgTotal)}
           subtitle={`Over ${months.length} month${months.length > 1 ? "s" : ""}`}
           icon={TrendingUp}
@@ -118,53 +127,52 @@ export default function Dashboard({ months }) {
         />
       </div>
 
-      {/* Total trend chart */}
+      {/* Two charts side by side on wide screens */}
       {chartData.length > 1 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Monthly Total Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Line type="monotone" dataKey="total" name="Total" stroke="#0f172a" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="paras" name="Paras" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} />
-                <Line type="monotone" dataKey="mishal" name="Mishal" stroke="#a855f7" strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Monthly Total Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={60} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Line type="monotone" dataKey="total" name="Total" stroke={COLORS.total} strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="paras" name="Paras" stroke={COLORS.paras} strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} />
+                  <Line type="monotone" dataKey="mishal" name="Mishal" stroke={COLORS.mishal} strokeWidth={1.5} strokeDasharray="4 2" dot={{ r: 2 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Bill Breakdown by Category</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} width={60} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar dataKey="housing" name="Housing" stackId="a" fill={COLORS.housing} />
+                  <Bar dataKey="utilities" name="Utilities" stackId="a" fill={COLORS.utilities} />
+                  <Bar dataKey="misc" name="Misc" stackId="a" fill={COLORS.misc} radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* Stacked breakdown chart */}
-      {chartData.length > 1 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Bill Breakdown by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Bar dataKey="housing" name="Housing" stackId="a" fill="#3b82f6" radius={[0,0,0,0]} />
-                <Bar dataKey="utilities" name="Utilities" stackId="a" fill="#f59e0b" />
-                <Bar dataKey="misc" name="Misc" stackId="a" fill="#a855f7" radius={[3,3,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Single month summary table */}
+      {/* All months summary table */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">All Months Summary</CardTitle>
@@ -193,8 +201,8 @@ export default function Dashboard({ months }) {
                       <td className="text-right py-2 px-2 font-mono text-xs">{fmt(c.utilitiesTotal)}</td>
                       <td className="text-right py-2 px-2 font-mono text-xs">{fmt(c.miscTotal)}</td>
                       <td className="text-right py-2 px-2 font-mono text-xs font-semibold">{fmt(c.grandTotal)}</td>
-                      <td className="text-right py-2 pl-2 font-mono text-xs text-blue-600">{fmt(c.parasFinal)}</td>
-                      <td className="text-right py-2 pl-2 font-mono text-xs text-purple-600">{fmt(c.mishalFinal)}</td>
+                      <td className="text-right py-2 pl-2 font-mono text-xs">{fmt(c.parasFinal)}</td>
+                      <td className="text-right py-2 pl-2 font-mono text-xs">{fmt(c.mishalFinal)}</td>
                     </tr>
                   )
                 })}
