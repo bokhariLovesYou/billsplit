@@ -121,6 +121,71 @@ export function calculateSplit(data) {
   }
 }
 
+export function calculateNoorShare(
+  data,
+  excludedUtilityIndexes = [],
+  personalBills = data.noorPersonalBills || [],
+) {
+  const { housingTotal, utilitiesTotal, evTotal, parasEV } = calculateSplit(data)
+  const excluded = new Set(excludedUtilityIndexes)
+  const includedUtilitiesTotal = data.utilities.reduce(
+    (sum, item, index) => excluded.has(index) ? sum : sum + item.amount,
+    0,
+  )
+  const includedComedIndex = data.utilities.findIndex(
+    (item, index) => !excluded.has(index) && /\bcomed\b/i.test(item.label),
+  )
+  const mortgageCredit = 60
+  const housingShare = housingTotal / 4
+  const housingAfterCredit = housingShare - mortgageCredit
+  const evDeduction = includedComedIndex >= 0 ? evTotal : 0
+  const sharedUtilities = includedUtilitiesTotal - evDeduction
+  const utilitiesShare = sharedUtilities / 6
+
+  const utilityItems = data.utilities.map((item, index) => {
+    const isExcluded = excluded.has(index)
+    const evDeductionForItem = index === includedComedIndex ? evDeduction : 0
+    const sharedAmount = isExcluded ? 0 : item.amount - evDeductionForItem
+
+    return {
+      ...item,
+      index,
+      isExcluded,
+      evDeduction: evDeductionForItem,
+      sharedAmount,
+      noorShare: sharedAmount / 6,
+    }
+  })
+
+  const personalBillItems = personalBills.map(item => {
+    const amount = item.source === "parasEV" ? parasEV : Number(item.amount) || 0
+    const percentage = Number(item.percentage) || 0
+    return {
+      ...item,
+      amount,
+      percentage,
+      noorShare: amount * (percentage / 100),
+    }
+  })
+  const personalBillsTotal = personalBillItems.reduce((sum, item) => sum + item.noorShare, 0)
+
+  return {
+    housingTotal,
+    housingShare,
+    mortgageCredit,
+    housingAfterCredit,
+    utilitiesTotal,
+    includedUtilitiesTotal,
+    evDeduction,
+    sharedUtilities,
+    utilitiesShare,
+    utilityItems,
+    personalBillItems,
+    personalBillsTotal,
+    total: housingAfterCredit + utilitiesShare + personalBillsTotal,
+  }
+}
+
 export function fmt(n) {
   if (n === null || n === undefined) return "—"
   return `$${n.toFixed(2)}`

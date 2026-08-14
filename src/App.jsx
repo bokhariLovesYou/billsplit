@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { getAllMonths, deleteMonth, monthLabel, formatMonthKey, parseMonthKey } from "@/lib/store"
+import { getAllMonths, saveMonth, deleteMonth, monthLabel, formatMonthKey, parseMonthKey } from "@/lib/store"
 import MonthSummary from "@/components/MonthSummary"
 import Dashboard from "@/components/Dashboard"
 import EntryDialog from "@/components/EntryDialog"
@@ -28,10 +28,17 @@ export default function App() {
       const all = await getAllMonths()
       setMonths(all)
       if (all.length > 0 && !keepSelected) {
+        const params = new URLSearchParams(window.location.search)
+        const sharedNoorMonth = params.get("view") === "noor" ? params.get("month") : null
+        const sharedMonthExists = sharedNoorMonth && all.some(m => m.monthKey === sharedNoorMonth)
         const now = new Date()
         const currentKey = formatMonthKey(now.getFullYear(), now.getMonth() + 1)
         const currentExists = all.find(m => m.monthKey === currentKey)
-        setSelectedKey(prev => prev && all.find(m => m.monthKey === prev) ? prev : (currentExists ? currentKey : all[0].monthKey))
+        setSelectedKey(prev => sharedMonthExists
+          ? sharedNoorMonth
+          : prev && all.find(m => m.monthKey === prev)
+            ? prev
+            : (currentExists ? currentKey : all[0].monthKey))
       }
     } catch (e) {
       setError("Could not load data. Check your API URL or connection.")
@@ -76,8 +83,20 @@ export default function App() {
     setShowEntry(true)
   }
 
+  async function handleSaveNoorDetails(details) {
+    if (!selectedData) return
+    await saveMonth({
+      ...selectedData,
+      ...details,
+      savedAt: new Date().toISOString(),
+    })
+    await refresh(true)
+  }
+
   const selectedData = months.find(m => m.monthKey === selectedKey) || null
   const selectedIdx = months.findIndex(m => m.monthKey === selectedKey)
+  const sharedNoorParams = new URLSearchParams(window.location.search)
+  const openNoorFromLink = sharedNoorParams.get("view") === "noor" && sharedNoorParams.get("month") === selectedKey
 
   // months sorted descending: Left = older (higher index), Right = newer (lower index)
   function navigate(dir) {
@@ -192,9 +211,12 @@ export default function App() {
 
               {selectedData && (
                 <MonthSummary
+                  key={selectedData.monthKey}
                   data={selectedData}
                   prevData={months[selectedIdx + 1] || null}
                   onSelectBill={(section, label) => setSelectedBill({ section, label })}
+                  onSaveNoorDetails={handleSaveNoorDetails}
+                  openNoorFromLink={openNoorFromLink}
                 />
               )}
 

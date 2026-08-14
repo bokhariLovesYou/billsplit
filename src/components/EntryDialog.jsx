@@ -126,7 +126,17 @@ export default function EntryDialog({ open, onClose, onSaved, initialData, exist
     setSaving(true)
     setError("")
     try {
-      await saveMonth({ monthKey, housing, utilities, misc, ev, credits, savedAt: new Date().toISOString() })
+      await saveMonth({
+        monthKey,
+        housing,
+        utilities,
+        misc,
+        ev,
+        credits,
+        noorPersonalBills: initialData?.noorPersonalBills || [],
+        noorExcludedUtilities: initialData?.noorExcludedUtilities || [],
+        savedAt: new Date().toISOString(),
+      })
       onSaved(monthKey)
       onClose()
     } catch {

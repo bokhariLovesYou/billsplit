@@ -4,7 +4,8 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { calculateSplit, fmt } from "@/lib/parser"
-import { Home, Zap, Package, User, TrendingUp, Lightbulb } from "lucide-react"
+import NoorShareModal from "@/components/NoorShareModal"
+import { Home, Zap, Package, User, TrendingUp, Lightbulb, Users } from "lucide-react"
 
 function InsightBadge({ current, prev }) {
   if (prev == null) {
@@ -74,10 +75,25 @@ function SectionCard({ icon: Icon, title, children, total }) {
   )
 }
 
-export default function MonthSummary({ data, prevData, onSelectBill }) {
+export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorDetails, openNoorFromLink = false }) {
   const [showInsights, setShowInsights] = useState(false)
+  const [showNoorShare, setShowNoorShare] = useState(openNoorFromLink)
   const calc = calculateSplit(data)
   const prevCalc = prevData ? calculateSplit(prevData) : null
+
+  function openNoorShare() {
+    setShowNoorShare(true)
+  }
+
+  function closeNoorShare() {
+    setShowNoorShare(false)
+    const url = new URL(window.location.href)
+    if (url.searchParams.get("view") === "noor" && url.searchParams.get("month") === data.monthKey) {
+      url.searchParams.delete("view")
+      url.searchParams.delete("month")
+      window.history.replaceState({}, "", url.toString())
+    }
+  }
 
   function badge(current, prev) {
     if (!showInsights) return null
@@ -93,7 +109,15 @@ export default function MonthSummary({ data, prevData, onSelectBill }) {
   return (
     <div className="space-y-4">
       {/* Insights toggle */}
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openNoorShare}
+        >
+          <Users className="h-3.5 w-3.5 mr-1.5" />
+          Show Noor&apos;s Share
+        </Button>
         <Button
           variant={showInsights ? "default" : "outline"}
           size="sm"
@@ -225,6 +249,14 @@ export default function MonthSummary({ data, prevData, onSelectBill }) {
           </div>
         </CardContent>
       </Card>
+
+      {showNoorShare && (
+        <NoorShareModal
+          data={data}
+          onClose={closeNoorShare}
+          onSave={onSaveNoorDetails}
+        />
+      )}
     </div>
   )
 }
