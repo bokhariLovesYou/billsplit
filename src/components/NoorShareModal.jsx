@@ -53,10 +53,11 @@ function initialPersonalBills(data) {
 export default function NoorShareModal({ data, onClose, onSave }) {
   const [excludedUtilities, setExcludedUtilities] = useState(data.noorExcludedUtilities || [])
   const [personalBills, setPersonalBills] = useState(() => initialPersonalBills(data))
+  const [mortgageCredit, setMortgageCredit] = useState(String(data.noorMortgageCredit ?? 60))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
-  const noor = calculateNoorShare(data, excludedUtilities, personalBills)
+  const noor = calculateNoorShare(data, excludedUtilities, personalBills, mortgageCredit)
 
   function toggleUtility(index) {
     setExcludedUtilities(current =>
@@ -99,6 +100,7 @@ export default function NoorShareModal({ data, onClose, onSave }) {
     setError("")
     try {
       await onSave({
+        noorMortgageCredit: Number(mortgageCredit) || 0,
         noorPersonalBills: cleanedPersonalBills,
         noorExcludedUtilities: excludedUtilities,
       })
@@ -154,9 +156,21 @@ export default function NoorShareModal({ data, onClose, onSave }) {
                 <span>Housing share (÷ 4)</span>
                 <span className="font-mono">{fmt(noor.housingShare)}</span>
               </div>
-              <div className="flex justify-between text-sm text-emerald-600">
-                <span>Mortgage credit</span>
-                <span className="font-mono">-{fmt(noor.mortgageCredit)}</span>
+              <div className="flex items-center justify-between gap-3 text-sm text-emerald-600">
+                <label htmlFor="noor-mortgage-credit">Mortgage credit</label>
+                <div className="relative w-28">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm">$</span>
+                  <Input
+                    id="noor-mortgage-credit"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={mortgageCredit}
+                    onChange={event => setMortgageCredit(event.target.value)}
+                    className="h-9 pl-7 font-mono text-right text-emerald-600"
+                    aria-label="Noor's mortgage credit"
+                  />
+                </div>
               </div>
               <Separator />
               <div className="flex justify-between text-sm font-medium">

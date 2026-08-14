@@ -125,6 +125,7 @@ export function calculateNoorShare(
   data,
   excludedUtilityIndexes = [],
   personalBills = data.noorPersonalBills || [],
+  mortgageCreditValue = data.noorMortgageCredit ?? 60,
 ) {
   const { housingTotal, utilitiesTotal, evTotal, parasEV } = calculateSplit(data)
   const excluded = new Set(excludedUtilityIndexes)
@@ -135,7 +136,7 @@ export function calculateNoorShare(
   const includedComedIndex = data.utilities.findIndex(
     (item, index) => !excluded.has(index) && /\bcomed\b/i.test(item.label),
   )
-  const mortgageCredit = 60
+  const mortgageCredit = Number(mortgageCreditValue) || 0
   const housingShare = housingTotal / 4
   const housingAfterCredit = housingShare - mortgageCredit
   const evDeduction = includedComedIndex >= 0 ? evTotal : 0
