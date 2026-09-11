@@ -253,6 +253,7 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
       {showNoorShare && (
         <NoorShareModal
           data={data}
+          prevData={prevData}
           onClose={closeNoorShare}
           onSave={onSaveNoorDetails}
         />

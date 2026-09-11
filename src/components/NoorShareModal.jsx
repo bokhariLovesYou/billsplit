@@ -41,8 +41,7 @@ function addDraftIds(items) {
   return items.map(item => ({ ...item, draftId: `noor-bill-${nextDraftId++}` }))
 }
 
-function initialPersonalBills(data) {
-  const items = Array.isArray(data.noorPersonalBills) ? data.noorPersonalBills : DEFAULT_PERSONAL_BILLS
+function preparePersonalBills(items) {
   return addDraftIds(items.map(item =>
     /^ev car charging$/i.test(item.label)
       ? { ...item, source: "parasEV" }
@@ -50,14 +49,32 @@ function initialPersonalBills(data) {
   ))
 }
 
-export default function NoorShareModal({ data, onClose, onSave }) {
+function initialPersonalBills(data) {
+  const items = Array.isArray(data.noorPersonalBills) ? data.noorPersonalBills : DEFAULT_PERSONAL_BILLS
+  return preparePersonalBills(items)
+}
+
+export default function NoorShareModal({ data, prevData, onClose, onSave }) {
+  const savedUtilitiesCredit = data.noorSharedUtilitiesCredit
   const [excludedUtilities, setExcludedUtilities] = useState(data.noorExcludedUtilities || [])
   const [personalBills, setPersonalBills] = useState(() => initialPersonalBills(data))
   const [mortgageCredit, setMortgageCredit] = useState(String(data.noorMortgageCredit ?? 60))
+  const [sharedUtilitiesCredit, setSharedUtilitiesCredit] = useState(String(
+    typeof savedUtilitiesCredit === "object" ? savedUtilitiesCredit?.amount ?? 0 : savedUtilitiesCredit ?? 0,
+  ))
+  const [sharedUtilitiesCreditNote, setSharedUtilitiesCreditNote] = useState(
+    typeof savedUtilitiesCredit === "object" ? savedUtilitiesCredit?.note || "" : "",
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
-  const noor = calculateNoorShare(data, excludedUtilities, personalBills, mortgageCredit)
+  const noor = calculateNoorShare(
+    data,
+    excludedUtilities,
+    personalBills,
+    mortgageCredit,
+    sharedUtilitiesCredit,
+  )
 
   function toggleUtility(index) {
     setExcludedUtilities(current =>
@@ -84,6 +101,11 @@ export default function NoorShareModal({ data, onClose, onSave }) {
     setPersonalBills(current => current.filter(item => item.draftId !== draftId))
   }
 
+  function copyPreviousPersonalBills() {
+    if (!prevData?.noorPersonalBills?.length) return
+    setPersonalBills(preparePersonalBills(prevData.noorPersonalBills))
+  }
+
   async function handleSave() {
     const cleanedPersonalBills = personalBills
       .filter(item => item.label.trim() && item.amount !== "")
@@ -101,6 +123,10 @@ export default function NoorShareModal({ data, onClose, onSave }) {
     try {
       await onSave({
         noorMortgageCredit: Number(mortgageCredit) || 0,
+        noorSharedUtilitiesCredit: {
+          amount: Number(sharedUtilitiesCredit) || 0,
+          note: sharedUtilitiesCreditNote.trim(),
+        },
         noorPersonalBills: cleanedPersonalBills,
         noorExcludedUtilities: excludedUtilities,
       })
@@ -224,9 +250,51 @@ export default function NoorShareModal({ data, onClose, onSave }) {
                   <span className="font-mono">-{fmt(noor.evDeduction)}</span>
                 </div>
               )}
-              <Separator />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Shared utility pool</span>
+                <span className="font-mono">{fmt(noor.sharedUtilities)}</span>
+              </div>
               <div className="flex justify-between text-sm font-medium">
                 <span>Utilities share (÷ 6)</span>
+                <span className="font-mono">{fmt(noor.utilitiesShareBeforeCredit)}</span>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3 space-y-2">
+                <div className="flex items-center justify-between gap-3 text-sm text-emerald-600">
+                  <label htmlFor="noor-shared-utilities-credit">Shared utilities credit</label>
+                  <div className="relative w-28">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm">$</span>
+                    <Input
+                      id="noor-shared-utilities-credit"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={sharedUtilitiesCredit}
+                      onChange={event => setSharedUtilitiesCredit(event.target.value)}
+                      className="h-9 pl-7 font-mono text-right text-emerald-600"
+                      aria-label="Shared utilities credit"
+                    />
+                  </div>
+                </div>
+                <Input
+                  value={sharedUtilitiesCreditNote}
+                  onChange={event => setSharedUtilitiesCreditNote(event.target.value)}
+                  placeholder="Optional note, e.g. washer/dryer credit"
+                  className="h-9"
+                  aria-label="Shared utilities credit note"
+                />
+              </div>
+              {noor.sharedUtilitiesCredit > 0 && (
+                <div className="flex justify-between text-sm text-emerald-600">
+                  <span>
+                    Less Noor&apos;s utility credit
+                    {sharedUtilitiesCreditNote.trim() ? ` — ${sharedUtilitiesCreditNote.trim()}` : ""}
+                  </span>
+                  <span className="font-mono shrink-0">-{fmt(noor.sharedUtilitiesCredit)}</span>
+                </div>
+              )}
+              <Separator />
+              <div className="flex justify-between text-sm font-medium">
+                <span>Utilities after credit</span>
                 <span className="font-mono">{fmt(noor.utilitiesShare)}</span>
               </div>
             </div>
@@ -309,10 +377,23 @@ export default function NoorShareModal({ data, onClose, onSave }) {
               </div>
             )}
 
-            <Button type="button" variant="outline" size="sm" onClick={addPersonalBill}>
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Add personal bill
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={addPersonalBill}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add personal bill
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={copyPreviousPersonalBills}
+                disabled={!prevData?.noorPersonalBills?.length}
+                title={prevData && !prevData.noorPersonalBills?.length ? `No saved personal bills in ${monthLabel(prevData.monthKey)}` : undefined}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1.5" />
+                {prevData ? `Copy from ${monthLabel(prevData.monthKey)}` : "No previous month"}
+              </Button>
+            </div>
 
             <Separator />
             <div className="flex justify-between text-sm font-semibold">

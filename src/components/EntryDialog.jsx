@@ -134,6 +134,7 @@ export default function EntryDialog({ open, onClose, onSaved, initialData, exist
         ev,
         credits,
         noorMortgageCredit: initialData?.noorMortgageCredit ?? 60,
+        noorSharedUtilitiesCredit: initialData?.noorSharedUtilitiesCredit || { amount: 0, note: "" },
         noorPersonalBills: initialData?.noorPersonalBills || [],
         noorExcludedUtilities: initialData?.noorExcludedUtilities || [],
         savedAt: new Date().toISOString(),
