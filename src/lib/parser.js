@@ -87,12 +87,11 @@ export function calculateSplit(data) {
   const mishalEV = data.ev?.mishal ? data.ev.mishal * rate : 0
   const evTotal  = parasEV + mishalEV
 
-  // Split everything 50/50 (Comed is included in full).
-  // The higher EV user contributed more to the electricity bill, so they get a credit
-  // equal to the full difference; the lower user absorbs that difference as a charge.
+  // Each half of the household total already includes half of both EV costs.
+  // Replace that allowance with each person's actual charging cost.
   const splitBase   = grandTotal / 2
-  const parasEvAdj  = parasEV  - mishalEV   // negative = Paras used less → he gets credit
-  const mishalEvAdj = mishalEV - parasEV   // positive = Mishal used more → she pays offset
+  const parasEvAdj  = parasEV - evTotal / 2
+  const mishalEvAdj = mishalEV - evTotal / 2
 
   const parasCredits  = (data.credits?.paras  || []).reduce((s, c) => s + c.amount, 0)
   const mishalCredits = (data.credits?.mishal || []).reduce((s, c) => s + c.amount, 0)

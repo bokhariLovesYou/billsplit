@@ -80,6 +80,9 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
   const [showNoorShare, setShowNoorShare] = useState(openNoorFromLink)
   const calc = calculateSplit(data)
   const prevCalc = prevData ? calculateSplit(prevData) : null
+  const sharedExpenses = calc.grandTotal - calc.evTotal
+  const sharedBase = sharedExpenses / 2
+  const comed = data.utilities.find(item => /\bcomed\b/i.test(item.label))
 
   function openNoorShare() {
     setShowNoorShare(true)
@@ -177,7 +180,7 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
 
       {/* EV */}
       {(data.ev?.rate || data.ev?.paras || data.ev?.mishal) && (
-        <SectionCard icon={Zap} title="EV (deducted from Comed)">
+        <SectionCard icon={Zap} title="EV charging included in ComEd">
           {data.ev.rate != null && (
             <div className="flex justify-between text-xs text-muted-foreground py-1">
               <span>Rate</span>
@@ -202,8 +205,17 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
           )}
           {calc.evTotal > 0 && (
             <div className="flex justify-between text-xs text-muted-foreground pt-2 mt-1 border-t">
-              <span>Total EV in Comed</span>
+              <span>Total EV charging</span>
               <span className="font-mono">{fmt(calc.evTotal)}</span>
+            </div>
+          )}
+          {comed && (
+            <div className="space-y-1 border-t pt-2 mt-2">
+              <LineItem label="Full ComEd bill" amount={comed.amount} />
+              <div className="flex justify-between text-sm gap-3">
+                <span>Household electricity after removing EV charging</span>
+                <span className="font-mono shrink-0">{fmt(comed.amount - calc.evTotal)}</span>
+              </div>
             </div>
           )}
         </SectionCard>
@@ -219,17 +231,27 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
               <span className="font-mono font-bold text-lg">{fmt(calc.grandTotal)}</span>
             </span>
           </div>
-          <div className="flex justify-between items-center text-muted-foreground text-sm mb-3">
-            <span>50/50 base split</span>
-            <span className="font-mono">{fmt(calc.splitBase)}</span>
+          <div className="space-y-2 text-sm mb-3">
+            <div className="flex justify-between text-muted-foreground gap-3">
+              <span>− EV charging included above</span>
+              <span className="font-mono shrink-0">−{fmt(calc.evTotal)}</span>
+            </div>
+            <div className="flex justify-between font-medium gap-3">
+              <span>Shared expenses excluding EV charging</span>
+              <span className="font-mono shrink-0">{fmt(sharedExpenses)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground gap-3">
+              <span>Shared base per person (÷ 2)</span>
+              <span className="font-mono shrink-0">{fmt(sharedBase)}</span>
+            </div>
           </div>
           <Separator className="mb-3" />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <PersonShare
               name="Paras"
-              base={calc.splitBase}
-              evAdj={calc.parasEvAdj}
+              base={sharedBase}
+              evCost={calc.parasEV}
               credits={data.credits.paras}
               absorbed={calc.parasAbsorbed}
               final={calc.parasFinal}
@@ -238,8 +260,8 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
             />
             <PersonShare
               name="Mishal"
-              base={calc.splitBase}
-              evAdj={calc.mishalEvAdj}
+              base={sharedBase}
+              evCost={calc.mishalEV}
               credits={data.credits.mishal}
               absorbed={calc.mishalAbsorbed}
               final={calc.mishalFinal}
@@ -247,6 +269,7 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
               showInsights={showInsights}
             />
           </div>
+          <p className="text-xs text-muted-foreground mt-3">Totals are calculated before rounding to cents.</p>
         </CardContent>
       </Card>
 
@@ -262,7 +285,7 @@ export default function MonthSummary({ data, prevData, onSelectBill, onSaveNoorD
   )
 }
 
-function PersonShare({ name, base, evAdj, credits, absorbed, final, prevFinal, showInsights }) {
+function PersonShare({ name, base, evCost, credits, absorbed, final, prevFinal, showInsights }) {
   return (
     <div className="bg-background rounded-lg border p-3 space-y-1">
       <div className="flex items-center gap-1.5 mb-2">
@@ -270,19 +293,11 @@ function PersonShare({ name, base, evAdj, credits, absorbed, final, prevFinal, s
         <span className="font-semibold text-sm">{name}</span>
       </div>
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Base</span><span className="font-mono">{fmt(base)}</span>
+        <span>Shared base</span><span className="font-mono">{fmt(base)}</span>
       </div>
-      {evAdj < 0 && (
-        <div className="flex justify-between text-xs text-emerald-600">
-          <span>- EV credit</span>
-          <span className="font-mono">-{fmt(Math.abs(evAdj))}</span>
-        </div>
-      )}
-      {evAdj > 0 && (
-        <div className="flex justify-between text-xs text-amber-600">
-          <span>+ EV Offset</span><span className="font-mono">+{fmt(evAdj)}</span>
-        </div>
-      )}
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>+ Own EV charging</span><span className="font-mono">+{fmt(evCost)}</span>
+      </div>
       {credits.map((c, i) => (
         <div key={i} className="flex justify-between text-xs text-emerald-600">
           <span className="truncate pr-1">- {c.label || "Credit"}</span>
