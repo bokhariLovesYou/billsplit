@@ -3,9 +3,10 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypt
 const cookieName = '__Host-donation-editor';
 const maxAge = 30 * 24 * 60 * 60;
 const digest = (value) => createHash('sha256').update(value).digest();
-const signature = (payload, password) => createHmac('sha256', password).update('donation-editor-v1:' + payload).digest();
+const signature = (payload, password) => createHmac('sha256', process.env.SESSION_SECRET || password).update('donation-editor-v1:' + payload).digest();
 const editorPassword = () => {
   const password = process.env.EDIT_PASSWORD;
+  if (password && process.env.SESSION_SECRET?.length >= 32) return password;
   return password?.length >= 24 ? password : null;
 };
 

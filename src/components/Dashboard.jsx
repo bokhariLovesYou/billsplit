@@ -36,7 +36,7 @@ function StatCard({ title, value, subtitle, icon: Icon, trend }) {
             {trend > 0 ? (
               <><TrendingUp className="h-3 w-3 text-red-500" /><span className="text-red-500">+{fmt(trend)} vs prev</span></>
             ) : trend < 0 ? (
-              <><TrendingDown className="h-3 w-3 text-green-500" /><span className="text-green-500">{fmt(trend)} vs prev</span></>
+              <><TrendingDown className="h-3 w-3 text-foreground" /><span className="text-foreground">{fmt(trend)} vs prev</span></>
             ) : (
               <><Minus className="h-3 w-3 text-muted-foreground" /><span className="text-muted-foreground">Same as prev</span></>
             )}

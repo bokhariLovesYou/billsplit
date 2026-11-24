@@ -20,7 +20,7 @@ export function Input({ className, ...props }) {
   return <input className={cn('h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20', className)} {...props} />;
 }
 export function Badge({ pending, children }) {
-  return <span className={cn('inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap', pending ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900')}><span className="size-1.5 rounded-full bg-current" />{children}</span>;
+  return <span className={cn('inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap', pending ? 'bg-amber-100 text-amber-900' : 'bg-muted text-foreground')}><span className="size-1.5 rounded-full bg-current" />{children}</span>;
 }
 export function Modal({ title, description, close, children }) {
   return <Dialog.Root open onOpenChange={(open) => { if (!open) close(); }}>

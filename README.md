@@ -16,7 +16,7 @@ Open the printed local URL. The local password is in `private-data/local-passwor
 
 ## Hosted branch preview
 
-Connect a dedicated free PostgreSQL database to the Vercel Preview environment. Set a random `EDIT_PASSWORD` of at least 24 characters for Preview. Supply the same database connection string in an ignored `.env.preview.local` file as `DATABASE_URL` or `POSTGRES_URL`. Run:
+Connect a dedicated free PostgreSQL database to the Vercel Preview environment. Set `EDIT_PASSWORD` and a separate random `SESSION_SECRET` of at least 32 characters in each hosted environment. Supply the same database connection string in an ignored `.env.preview.local` file as `DATABASE_URL` or `POSTGRES_URL`. Run:
 
 ```sh
 node --env-file=.env.preview.local scripts/import-finance.mjs

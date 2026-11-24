@@ -1,3 +1,4 @@
+import MonthCombobox from "./components/MonthCombobox"
 import { useState, useEffect, useCallback } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -211,15 +212,8 @@ export default function App() {
 
               {months.length > 3 && (
                 <div className="mb-5">
-                  <select
-                    value={selectedKey || ""}
-                    onChange={e => setSelectedKey(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {months.map(m => (
-                      <option key={m.monthKey} value={m.monthKey}>{monthLabel(m.monthKey)}</option>
-                    ))}
-                  </select>
+                  <MonthCombobox items={months.map(m => ({ value: m.monthKey, label: monthLabel(m.monthKey) }))}
+                    value={selectedKey} onChange={setSelectedKey} />
                 </div>
               )}
 

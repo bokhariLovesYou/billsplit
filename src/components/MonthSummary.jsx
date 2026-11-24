@@ -15,7 +15,7 @@ function InsightBadge({ current, prev }) {
   if (delta === 0) return null
   const pct = prev !== 0 ? (delta / prev) * 100 : null
   const isUp = delta > 0
-  const color = isUp ? "text-red-500" : "text-emerald-600"
+  const color = isUp ? "text-red-500" : "text-foreground"
   const arrow = isUp ? "↑" : "↓"
   return (
     <span className={`text-xs font-mono whitespace-nowrap ${color}`}>
@@ -299,7 +299,7 @@ function PersonShare({ name, base, evCost, credits, absorbed, final, prevFinal, 
         <span>+ Own EV charging</span><span className="font-mono">+{fmt(evCost)}</span>
       </div>
       {credits.map((c, i) => (
-        <div key={i} className="flex justify-between text-xs text-emerald-600">
+        <div key={i} className="flex justify-between text-xs text-foreground">
           <span className="truncate pr-1">- {c.label || "Credit"}</span>
           <span className="font-mono">-{fmt(c.amount)}</span>
         </div>

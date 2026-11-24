@@ -1,3 +1,4 @@
+import MonthCombobox from "./MonthCombobox"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -165,14 +166,8 @@ export default function EntryDialog({ open, onClose, onSaved, initialData, exist
           <div className="flex gap-3">
             <div className="flex-1 space-y-1.5">
               <Label>Month</Label>
-              <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger><SelectValue placeholder="Select month" /></SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((m, i) => (
-                    <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MonthCombobox value={month} onChange={setMonth}
+                items={MONTHS.map((label, i) => ({ label, value: String(i + 1) }))} />
             </div>
             <div className="w-36 space-y-1.5">
               <Label>Year</Label>

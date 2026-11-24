@@ -1,3 +1,5 @@
+import ProjectLoader from "../components/ProjectLoader"
+import MonthCombobox from "../components/MonthCombobox"
 import { useEffect, useState } from 'react';
 import { ArrowLeft, CalendarDays, ChevronRight, CircleCheck, Download, HeartHandshake, Layers3, Plus, Search, Target, Trash2, Wallet } from 'lucide-react';
 import { Badge, Button, Card, Input, Modal } from './ui.jsx';
@@ -88,11 +90,14 @@ function PeriodForm({ period, defaults, periods, back, save }) {
       if (!period) window.location.replace(monthPath(key));
     } catch (failure) { setError(failure.message); } finally { setBusy(false); }
   }
-  return <Card className="mt-6 max-w-3xl p-4 sm:p-6">
+  return <Card className="mt-6 w-full p-4 sm:p-6">
     <form onSubmit={submit} className="grid gap-5">
       {!period && <div className="grid grid-cols-2 gap-3">
         <Field label="Year"><Input type="number" min="1900" max="9999" required value={key.split('-')[0]} onChange={(event) => changePeriod(event.target.value + '-' + key.split('-')[1])} /></Field>
-        <Field label="Period"><select className={selectClass} value={key.split('-')[1]} onChange={(event) => changePeriod(key.split('-')[0] + '-' + event.target.value)}>{months.map((month, index) => <option value={String(index + 1).padStart(2, '0')} key={month}>{month}</option>)}<option>Bonus</option></select></Field>
+        <div className="grid gap-1.5 text-sm font-medium"><span>Period</span>
+          <MonthCombobox label="Period" value={key.split('-')[1]} onChange={value => changePeriod(key.split('-')[0] + '-' + value)}
+            items={[...months.map((label, i) => ({ label, value: String(i + 1).padStart(2, '0') })), { label: 'Bonus', value: 'Bonus' }]} />
+        </div>
       </div>}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Target (USD)"><MoneyInput value={target} onChange={(event) => setTarget(event.target.value)} /></Field>
@@ -187,14 +192,14 @@ function PeriodPage({ period, creating, canEdit, seeDetails, defaults, periods, 
       {(period || creating) && editAction}
     </header>
     {notice && <p role="status" className="mt-4 text-sm font-medium text-primary">{notice}</p>}
-    {period && <div className="mt-5 grid max-w-4xl grid-cols-2 gap-3 lg:grid-cols-4">
-      <Metric icon={Target} label="Target" amount={period.target} accent="bg-emerald-100/70 text-primary" />
-      <Metric icon={HeartHandshake} label="Contributions" amount={listed(period)} accent="bg-emerald-100/70 text-primary" />
-      <Metric icon={CircleCheck} label="Carry-in" amount={period.carry} accent="bg-emerald-100/70 text-primary" />
+    {period && <div className="mt-5 grid w-full grid-cols-2 gap-3 lg:grid-cols-4">
+      <Metric icon={Target} label="Target" amount={period.target} accent="bg-muted text-primary" />
+      <Metric icon={HeartHandshake} label="Contributions" amount={listed(period)} accent="bg-muted text-primary" />
+      <Metric icon={CircleCheck} label="Carry-in" amount={period.carry} accent="bg-muted text-primary" />
       <Metric icon={Wallet} label="Remaining" amount={remaining(period)} accent="bg-amber-100/80 text-amber-900" />
     </div>}
     {canEdit && (period || creating) && <PeriodForm period={period} defaults={defaults} periods={periods} back={back} save={save} />}
-    {!canEdit && period && seeDetails && <Card className="mt-6 max-w-3xl p-5">
+    {!canEdit && period && seeDetails && <Card className="mt-6 w-full p-5">
       <h2 className="text-lg font-semibold">Contributions</h2>
       {period.contributions.length ? <ul className="mt-2 divide-y divide-border">{period.contributions.map((entry) => <li key={entry.id} className="flex justify-between gap-3 py-3 text-sm"><span>{entry.description}{Boolean(entry.reserved) && <span className="ml-2 text-muted-foreground">Set aside</span>}</span><span className="shrink-0 tabular-nums">{money(entry.amount)}</span></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">No contributions recorded for this period.</p>}
       {period.note && <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">{period.note}</p>}
@@ -246,19 +251,14 @@ export default function DonationTracker() {
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState(null);
   const [notice, setNotice] = useState('');
-  const [sessionError, setSessionError] = useState('');
   useEffect(() => { loadLedger().then(setData).catch((error) => setLoadError(error.message)); }, []);
 
-  async function changeSession(method, password) {
-    const response = await fetch('/api/session', method === 'POST' ? {
-      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }),
-    } : { method });
+  async function unlock(password) {
+    const response = await fetch('/api/session', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }),
+    });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Could not update the editing session.');
-    if (method === 'DELETE') {
-      setData((current) => ({ ...current, visibility: 'summary', extras: [], periods: current.periods.map((item) => ({ ...item, note: '', contributions: [] })) }));
-      setView('monthly');
-    }
     setData(await loadLedger());
     setDialog(null);
   }
@@ -277,7 +277,8 @@ export default function DonationTracker() {
     setSearch('');
   }
 
-  if (!data) return <main className="mx-auto max-w-3xl p-8">{loadError || 'Loading donation tracker…'}</main>;
+  if (loadError && !data) return <main role="alert" className="mx-auto max-w-3xl p-8">{loadError}</main>;
+  if (!data) return <ProjectLoader project="donations" />;
 
   const years = [...new Set(data.periods.map((period) => period.period.slice(0, 4)))];
   const activeYear = year === 'all' || years.includes(year) ? year : years[0] ?? 'all';
@@ -296,19 +297,16 @@ export default function DonationTracker() {
   const seeDetails = data.visibility !== 'summary';
   const isMonthly = view === 'monthly' || !seeDetails;
   const monthKey = /^\/donations\/months\/([^/]+)$/.exec(window.location.pathname)?.[1];
-  const editAction = canEdit
-    ? <Button variant="outline" onClick={() => { setSessionError(''); changeSession('DELETE').catch((error) => setSessionError(error.message)); }}>Lock editing</Button>
-    : <Button variant="outline" onClick={() => { setSessionError(''); setDialog({ type: 'password' }); }}>Edit</Button>;
+  const editAction = !canEdit && <Button variant="outline" onClick={() => setDialog({ type: 'password' })}>Edit</Button>;
   const pagePeriod = monthKey && data.periods.find((period) => period.period === monthKey);
   return <div className="min-h-screen md:grid md:grid-cols-[226px_minmax(0,1fr)]">
     <aside className="border-b border-border bg-card px-4 py-4 md:min-h-screen md:border-r md:border-b-0 md:px-4 md:py-6">
       <div className="flex items-center gap-3 px-2"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-white"><HeartHandshake className="size-5" /></div><span className="text-base font-semibold tracking-tight">Donation Tracker</span></div>
       <nav aria-label="Tracker" className="mt-4 flex gap-2 md:mt-9 md:grid">
-        {[[CalendarDays, 'monthly', 'Monthly ledger'], [Layers3, 'extras', 'Extra donations']].filter(([, key]) => key === 'monthly' || seeDetails).map(([Icon, key, label]) => <button key={key} aria-current={view === key ? 'page' : undefined} onClick={() => { if (monthKey) window.location.assign('/donations' + (key === 'extras' ? '?view=extras' : '')); else switchView(key); }} className={cn('flex min-h-10 items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium', view === key ? 'bg-emerald-100/70 text-emerald-950' : 'text-muted-foreground hover:bg-muted')}><Icon className="size-4 shrink-0" />{label}</button>)}
+        {[[CalendarDays, 'monthly', 'Monthly ledger'], [Layers3, 'extras', 'Extra donations']].filter(([, key]) => key === 'monthly' || seeDetails).map(([Icon, key, label]) => <button key={key} aria-current={view === key ? 'page' : undefined} onClick={() => { if (monthKey) window.location.assign('/donations' + (key === 'extras' ? '?view=extras' : '')); else switchView(key); }} className={cn('flex min-h-10 items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium', view === key ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted')}><Icon className="size-4 shrink-0" />{label}</button>)}
       </nav>
     </aside>
     <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-8 sm:py-9 lg:px-10">
-      {sessionError && <p className="mb-3 text-sm text-red-700" role="alert">{sessionError}</p>}
       {monthKey ? <PeriodPage period={pagePeriod} creating={monthKey === 'new'} canEdit={canEdit} seeDetails={seeDetails} defaults={defaults} periods={data.periods} save={save} notice={notice} editAction={editAction} /> : <>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{isMonthly ? 'Monthly ledger' : 'Extra donations'}</h1><p className="mt-2 text-sm text-muted-foreground">{isMonthly ? 'Track your giving targets and carryover by month.' : 'Giving recorded outside your monthly targets.'}</p></div>
@@ -323,11 +321,11 @@ export default function DonationTracker() {
       {notice && <p role="status" className="mt-4 text-sm font-medium text-primary">{notice}</p>}
       <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 sm:gap-4">
         {isMonthly ? <>
-          <Metric icon={HeartHandshake} label="All-time donations" amount={data.allTimeDonated} detail="Includes extra donations" accent="bg-emerald-100/70 text-primary" />
-          <Metric icon={Target} label="Target" amount={sum(yearRows, (period) => period.target)} detail={yearRows.length + (yearRows.length === 1 ? ' recorded period' : ' recorded periods')} accent="bg-emerald-100/70 text-primary" />
-          <Metric icon={CircleCheck} label="Applied to targets" amount={sum(yearRows, (period) => Math.min(period.target, covered(period)))} detail="Contributions and carry-in applied" accent="bg-emerald-100/70 text-primary" />
+          <Metric icon={HeartHandshake} label="All-time donations" amount={data.allTimeDonated} detail="Includes extra donations" accent="bg-muted text-primary" />
+          <Metric icon={Target} label="Target" amount={sum(yearRows, (period) => period.target)} detail={yearRows.length + (yearRows.length === 1 ? ' recorded period' : ' recorded periods')} accent="bg-muted text-primary" />
+          <Metric icon={CircleCheck} label="Applied to targets" amount={sum(yearRows, (period) => Math.min(period.target, covered(period)))} detail="Contributions and carry-in applied" accent="bg-muted text-primary" />
           <Metric icon={Wallet} label="Remaining" amount={sum(yearRows, remaining)} detail={pending + (pending === 1 ? ' pending period' : ' pending periods')} accent="bg-amber-100/80 text-amber-900" />
-        </> : <Metric icon={HeartHandshake} label="Additional giving" amount={sum(data.extras.filter((entry) => !entry.reference), (entry) => entry.amount)} detail="Outside monthly targets" accent="bg-emerald-100/70 text-primary" />}
+        </> : <Metric icon={HeartHandshake} label="Additional giving" amount={sum(data.extras.filter((entry) => !entry.reference), (entry) => entry.amount)} detail="Outside monthly targets" accent="bg-muted text-primary" />}
       </div>
       <Card className="mt-6 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
@@ -342,7 +340,7 @@ export default function DonationTracker() {
       </Card>
       </>}
     </main>
-    {dialog?.type === 'password' && <EditPassword close={() => setDialog(null)} unlock={(password) => changeSession('POST', password)} />}
+    {dialog?.type === 'password' && <EditPassword close={() => setDialog(null)} unlock={unlock} />}
     {dialog?.type === 'extras' && <ExtraModal entry={dialog.entry} close={() => setDialog(null)} save={save} />}
   </div>;
 }

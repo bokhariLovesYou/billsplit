@@ -1,3 +1,4 @@
+import ProjectLoader from "./components/ProjectLoader"
 import { lazy, Suspense } from 'react'
 import { BookOpen } from 'lucide-react'
 import BillSplit from './App.jsx'
@@ -14,6 +15,6 @@ export default function Workspace() {
           <a key={href} href={href} aria-current={active === donations ? 'page' : undefined} className={'rounded-md px-3 py-1.5 ' + (active === donations ? 'bg-card font-medium text-primary shadow-sm' : 'text-muted-foreground')}>{label}</a>)}
       </nav>
     </div></header>
-    <Suspense fallback={<p className="p-6">Loading…</p>}>{donations ? <DonationTracker /> : <BillSplit />}</Suspense>
+    <Suspense fallback={<ProjectLoader project="donations" />}>{donations ? <DonationTracker /> : <BillSplit />}</Suspense>
   </>
 }
