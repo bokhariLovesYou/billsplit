@@ -182,7 +182,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                 <span>Housing share (÷ 4)</span>
                 <span className="font-mono">{fmt(noor.housingShare)}</span>
               </div>
-              <div className="flex items-center justify-between gap-3 text-sm text-foreground">
+              <div className="flex items-center justify-between gap-3 text-sm text-emerald-600">
                 <label htmlFor="noor-mortgage-credit">Mortgage credit</label>
                 <div className="relative w-28">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm">$</span>
@@ -193,7 +193,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                     step="0.01"
                     value={mortgageCredit}
                     onChange={event => setMortgageCredit(event.target.value)}
-                    className="h-9 pl-7 font-mono text-right text-foreground"
+                    className="h-9 pl-7 font-mono text-right text-emerald-600"
                     aria-label="Noor's mortgage credit"
                   />
                 </div>
@@ -226,7 +226,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                       <span className="font-mono shrink-0">{fmt(item.amount)}</span>
                     </span>
                     {!item.isExcluded && item.evDeduction > 0 && (
-                      <span className="mt-1 flex items-center justify-between gap-3 text-xs text-foreground">
+                      <span className="mt-1 flex items-center justify-between gap-3 text-xs text-emerald-600">
                         <span>Less EV portion</span>
                         <span className="font-mono shrink-0">-{fmt(item.evDeduction)}</span>
                       </span>
@@ -245,7 +245,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                 <span className="font-mono">{fmt(noor.includedUtilitiesTotal)}</span>
               </div>
               {noor.evDeduction > 0 && (
-                <div className="flex justify-between text-sm text-foreground">
+                <div className="flex justify-between text-sm text-emerald-600">
                   <span>Less EV in ComEd</span>
                   <span className="font-mono">-{fmt(noor.evDeduction)}</span>
                 </div>
@@ -259,7 +259,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                 <span className="font-mono">{fmt(noor.utilitiesShareBeforeCredit)}</span>
               </div>
               <div className="rounded-md border bg-muted/20 p-3 space-y-2">
-                <div className="flex items-center justify-between gap-3 text-sm text-foreground">
+                <div className="flex items-center justify-between gap-3 text-sm text-emerald-600">
                   <label htmlFor="noor-shared-utilities-credit">Shared utilities credit</label>
                   <div className="relative w-28">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-sm">$</span>
@@ -270,7 +270,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                       step="0.01"
                       value={sharedUtilitiesCredit}
                       onChange={event => setSharedUtilitiesCredit(event.target.value)}
-                      className="h-9 pl-7 font-mono text-right text-foreground"
+                      className="h-9 pl-7 font-mono text-right text-emerald-600"
                       aria-label="Shared utilities credit"
                     />
                   </div>
@@ -284,7 +284,7 @@ export default function NoorShareModal({ data, prevData, onClose, onSave }) {
                 />
               </div>
               {noor.sharedUtilitiesCredit > 0 && (
-                <div className="flex justify-between text-sm text-foreground">
+                <div className="flex justify-between text-sm text-emerald-600">
                   <span>
                     Less Noor&apos;s utility credit
                     {sharedUtilitiesCreditNote.trim() ? ` — ${sharedUtilitiesCreditNote.trim()}` : ""}

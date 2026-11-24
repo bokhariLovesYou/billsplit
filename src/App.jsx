@@ -123,19 +123,10 @@ export default function App() {
               <p className="text-xs text-muted-foreground leading-none mt-0.5">Paras & Mishal</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-          <Button size="sm" variant="ghost" onClick={async () => {
-            try {
-              const result = await fetch("/api/session", { method: "DELETE" })
-              if (!result.ok) throw new Error()
-              window.location.reload()
-            } catch { setError("Could not lock the session. Try again.") }
-          }}>Lock</Button>
           <Button size="sm" onClick={() => setShowEntry(true)} disabled={loading || !!error}>
             <Plus className="h-4 w-4" />
             Add Month
           </Button>
-          </div>
         </div>
       </header>
 

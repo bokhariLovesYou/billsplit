@@ -193,9 +193,9 @@ function PeriodPage({ period, creating, canEdit, seeDetails, defaults, periods, 
     </header>
     {notice && <p role="status" className="mt-4 text-sm font-medium text-primary">{notice}</p>}
     {period && <div className="mt-5 grid w-full grid-cols-2 gap-3 lg:grid-cols-4">
-      <Metric icon={Target} label="Target" amount={period.target} accent="bg-muted text-primary" />
-      <Metric icon={HeartHandshake} label="Contributions" amount={listed(period)} accent="bg-muted text-primary" />
-      <Metric icon={CircleCheck} label="Carry-in" amount={period.carry} accent="bg-muted text-primary" />
+      <Metric icon={Target} label="Target" amount={period.target} accent="bg-emerald-100/70 text-primary" />
+      <Metric icon={HeartHandshake} label="Contributions" amount={listed(period)} accent="bg-emerald-100/70 text-primary" />
+      <Metric icon={CircleCheck} label="Carry-in" amount={period.carry} accent="bg-emerald-100/70 text-primary" />
       <Metric icon={Wallet} label="Remaining" amount={remaining(period)} accent="bg-amber-100/80 text-amber-900" />
     </div>}
     {canEdit && (period || creating) && <PeriodForm period={period} defaults={defaults} periods={periods} back={back} save={save} />}
@@ -303,7 +303,7 @@ export default function DonationTracker() {
     <aside className="border-b border-border bg-card px-4 py-4 md:min-h-screen md:border-r md:border-b-0 md:px-4 md:py-6">
       <div className="flex items-center gap-3 px-2"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-white"><HeartHandshake className="size-5" /></div><span className="text-base font-semibold tracking-tight">Donation Tracker</span></div>
       <nav aria-label="Tracker" className="mt-4 flex gap-2 md:mt-9 md:grid">
-        {[[CalendarDays, 'monthly', 'Monthly ledger'], [Layers3, 'extras', 'Extra donations']].filter(([, key]) => key === 'monthly' || seeDetails).map(([Icon, key, label]) => <button key={key} aria-current={view === key ? 'page' : undefined} onClick={() => { if (monthKey) window.location.assign('/donations' + (key === 'extras' ? '?view=extras' : '')); else switchView(key); }} className={cn('flex min-h-10 items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium', view === key ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted')}><Icon className="size-4 shrink-0" />{label}</button>)}
+        {[[CalendarDays, 'monthly', 'Monthly ledger'], [Layers3, 'extras', 'Extra donations']].filter(([, key]) => key === 'monthly' || seeDetails).map(([Icon, key, label]) => <button key={key} aria-current={view === key ? 'page' : undefined} onClick={() => { if (monthKey) window.location.assign('/donations' + (key === 'extras' ? '?view=extras' : '')); else switchView(key); }} className={cn('flex min-h-10 items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium', view === key ? 'bg-emerald-100/70 text-emerald-950' : 'text-muted-foreground hover:bg-muted')}><Icon className="size-4 shrink-0" />{label}</button>)}
       </nav>
     </aside>
     <main className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-8 sm:py-9 lg:px-10">
@@ -321,11 +321,11 @@ export default function DonationTracker() {
       {notice && <p role="status" className="mt-4 text-sm font-medium text-primary">{notice}</p>}
       <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4 sm:gap-4">
         {isMonthly ? <>
-          <Metric icon={HeartHandshake} label="All-time donations" amount={data.allTimeDonated} detail="Includes extra donations" accent="bg-muted text-primary" />
-          <Metric icon={Target} label="Target" amount={sum(yearRows, (period) => period.target)} detail={yearRows.length + (yearRows.length === 1 ? ' recorded period' : ' recorded periods')} accent="bg-muted text-primary" />
-          <Metric icon={CircleCheck} label="Applied to targets" amount={sum(yearRows, (period) => Math.min(period.target, covered(period)))} detail="Contributions and carry-in applied" accent="bg-muted text-primary" />
+          <Metric icon={HeartHandshake} label="All-time donations" amount={data.allTimeDonated} detail="Includes extra donations" accent="bg-emerald-100/70 text-primary" />
+          <Metric icon={Target} label="Target" amount={sum(yearRows, (period) => period.target)} detail={yearRows.length + (yearRows.length === 1 ? ' recorded period' : ' recorded periods')} accent="bg-emerald-100/70 text-primary" />
+          <Metric icon={CircleCheck} label="Applied to targets" amount={sum(yearRows, (period) => Math.min(period.target, covered(period)))} detail="Contributions and carry-in applied" accent="bg-emerald-100/70 text-primary" />
           <Metric icon={Wallet} label="Remaining" amount={sum(yearRows, remaining)} detail={pending + (pending === 1 ? ' pending period' : ' pending periods')} accent="bg-amber-100/80 text-amber-900" />
-        </> : <Metric icon={HeartHandshake} label="Additional giving" amount={sum(data.extras.filter((entry) => !entry.reference), (entry) => entry.amount)} detail="Outside monthly targets" accent="bg-muted text-primary" />}
+        </> : <Metric icon={HeartHandshake} label="Additional giving" amount={sum(data.extras.filter((entry) => !entry.reference), (entry) => entry.amount)} detail="Outside monthly targets" accent="bg-emerald-100/70 text-primary" />}
       </div>
       <Card className="mt-6 overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5">
