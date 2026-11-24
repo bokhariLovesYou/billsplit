@@ -15,10 +15,17 @@ export default function Unlock({ onSuccess }) {
       onSuccess()
     } catch (err) { setError(err.message) }
   }
-  return <form onSubmit={submit} className="mx-auto my-16 max-w-sm space-y-4 rounded-xl border bg-card p-6">
+  return <form onSubmit={submit} className="mx-auto my-16 grid w-[calc(100%-2rem)] max-w-sm gap-4 rounded-xl border bg-card p-6">
     <h1 className="text-xl font-semibold">Unlock BillSplit</h1>
-    <label className="block text-sm">Housebook password<Input name="password" type="password" autoComplete="current-password" required /></label>
+    <Input
+      name="password"
+      type="password"
+      placeholder="Housebook password"
+      aria-label="Housebook password"
+      autoComplete="current-password"
+      required
+    />
     {error && <p role="alert" className="text-destructive">{error}</p>}
-    <Button>Unlock</Button>
+    <Button className="justify-self-start">Unlock</Button>
   </form>
 }
