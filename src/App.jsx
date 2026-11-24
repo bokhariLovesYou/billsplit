@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { getAllMonths, saveMonth, deleteMonth, monthLabel, formatMonthKey, parseMonthKey } from "@/lib/store"
+import Unlock from "./components/Unlock"
 import MonthSummary from "@/components/MonthSummary"
 import Dashboard from "@/components/Dashboard"
 import EntryDialog from "@/components/EntryDialog"
@@ -11,6 +12,7 @@ import BillTrendModal from "@/components/BillTrendModal"
 import { Plus, Trash2, BarChart3, Receipt, ChevronLeft, ChevronRight, Pencil, Loader2 } from "lucide-react"
 
 export default function App() {
+  const [locked, setLocked] = useState(false)
   const [months, setMonths] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -23,9 +25,10 @@ export default function App() {
   const [selectedBill, setSelectedBill] = useState(null)
 
   const refresh = useCallback(async (keepSelected = false) => {
-    setError("")
     try {
       const all = await getAllMonths()
+      setError("")
+      setLocked(false)
       setMonths(all)
       if (all.length > 0 && !keepSelected) {
         const params = new URLSearchParams(window.location.search)
@@ -41,7 +44,8 @@ export default function App() {
             : (currentExists ? currentKey : all[0].monthKey))
       }
     } catch (e) {
-      setError("Could not load data. Check your API URL or connection.")
+      if (e.status === 401) setLocked(true)
+      else setError("Could not load BillSplit. Check the database connection and try again.")
     } finally {
       setLoading(false)
     }
@@ -104,6 +108,7 @@ export default function App() {
     if (next >= 0 && next < months.length) setSelectedKey(months[next].monthKey)
   }
 
+  if (locked) return <Unlock onSuccess={() => refresh()} />
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-10">
@@ -117,10 +122,19 @@ export default function App() {
               <p className="text-xs text-muted-foreground leading-none mt-0.5">Paras & Mishal</p>
             </div>
           </div>
-          <Button size="sm" onClick={() => setShowEntry(true)} disabled={loading}>
+          <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={async () => {
+            try {
+              const result = await fetch("/api/session", { method: "DELETE" })
+              if (!result.ok) throw new Error()
+              window.location.reload()
+            } catch { setError("Could not lock the session. Try again.") }
+          }}>Lock</Button>
+          <Button size="sm" onClick={() => setShowEntry(true)} disabled={loading || !!error}>
             <Plus className="h-4 w-4" />
             Add Month
           </Button>
+          </div>
         </div>
       </header>
 
@@ -137,7 +151,7 @@ export default function App() {
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm">Loading…</span>
           </div>
-        ) : months.length === 0 ? (
+        ) : error && months.length === 0 ? <Button onClick={() => refresh()}>Retry</Button> : months.length === 0 ? (
           <div className="text-center py-20 space-y-4">
             <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
               <Receipt className="h-8 w-8 text-muted-foreground opacity-50" />

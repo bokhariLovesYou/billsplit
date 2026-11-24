@@ -1,14 +1,10 @@
-const API_URL = import.meta.env.VITE_API_URL || ""
-
-if (!API_URL) {
-  console.warn("[billsplit] VITE_API_URL is not set — data will not persist.")
-}
+const API_URL = "/api/months"
 
 async function apiFetch(path = "", options = {}) {
   const res = await fetch(`${API_URL}${path}`, options)
   if (!res.ok) {
     const text = await res.text().catch(() => "")
-    throw new Error(`API error ${res.status}: ${text}`)
+    throw Object.assign(new Error(`API error ${res.status}: ${text}`), {status: res.status})
   }
   return res.json()
 }
